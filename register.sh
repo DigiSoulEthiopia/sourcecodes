@@ -25,7 +25,7 @@ HASH=$1
 CLIENT_IP=$2
 
 if valid_ip $CLIENT_IP; then
-EXISTS_IP=$(sudo cat /etc/wireguard/wg0.conf | grep $CLIENT_IP | wc -l)
+EXISTS_IP=$(sudo cat /etc/wireguard/wg0.conf | grep "$CLIENT_IP/32" | wc -l)
 EXISTS_HASH=$(sudo cat /etc/wireguard/wg0.conf | grep $HASH | wc -l)
   if [ $EXISTS_IP -gt 0 ]; then
       echo "The IP address already exists"

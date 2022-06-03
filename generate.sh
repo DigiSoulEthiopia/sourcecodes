@@ -21,24 +21,45 @@ function valid_ip()
 }
 
 if valid_ip $CLIENT_IP; then
-EXISTS=$(sudo cat /etc/wireguard/wg0.conf | grep $CLIENT_IP | wc -l)
-  if [ $EXISTS -gt 0 ]; then
+EXISTS_IP=$(sudo cat /etc/wireguard/wg0.conf | grep "$CLIENT_IP/32" | wc -l)
+  if [ $EXISTS_IP -gt 0 ]; then
       echo "The IP address already exists"
       exit 0
   fi
 else
-  echo "IP address is not valid. It must be from the 192.168.5.0/32"
+  echo "IP address is not valid. It must have format 192.168.5.X/32 where 0 < X < 255"
   exit 0
 fi
 
 cat <<FOK > ./client.sh
 #!/bin/bash
+SUPPORTED_OS=\$(cat /etc/os-release | grep ID_LIKE | grep -E 'centos|fedora|redhat|rhel' | wc -l)
+if [ \$SUPPORTED_OS -eq 0 ]; then
+  echo "Only Red Hat based distros are supported"
+  exit 0
+fi
+OS_VERSION=\$(cat /etc/os-release | grep VERSION_ID | sed -n -e '/VERSION_ID/ s/.*\= *//p' | tr -d '"')
 yum update -y
-yum install epel-release -y
-yum install 'dnf-command(config-manager)'
-yum config-manager --set-enabled powertools -y
-yum copr enable jdoss/wireguard -y
-yum install wireguard-dkms wireguard-tools -y
+yum install epel-release elrepo-release -y
+
+case \$OS_VERSION in
+
+  7)
+    echo "Installing components for RHEL version 7."
+    yum install yum-plugin-elrepo -y
+    ;;
+
+  8)
+    echo "Installing components for RHEL version 8."
+    ;;
+
+  *)
+    echo "We support only version 7 or 8."
+    exit 0
+    ;;
+esac
+yum install kmod-wireguard wireguard-tools -y
+
 mkdir -v /etc/wireguard/
 sh -c 'umask 077; touch /etc/wireguard/wg0.conf'
 ls -l /etc/wireguard/wg0.conf
