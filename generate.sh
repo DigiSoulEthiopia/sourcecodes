@@ -40,17 +40,21 @@ if [ \$SUPPORTED_OS -eq 0 ]; then
 fi
 OS_VERSION=\$(cat /etc/os-release | grep VERSION_ID | sed -n -e '/VERSION_ID/ s/.*\= *//p' | tr -d '"')
 yum update -y
-yum install epel-release elrepo-release -y
+yum install deltarpm -y
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
 
 case \$OS_VERSION in
 
   7)
     echo "Installing components for RHEL version 7."
-    yum install yum-plugin-elrepo -y
+    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm -y
+    yum install kmod-wireguard wireguard-tools -y
     ;;
 
   8)
     echo "Installing components for RHEL version 8."
+    yum install https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm -y
+    dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
     ;;
 
   *)
