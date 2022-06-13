@@ -41,13 +41,21 @@ fi
 OS_VERSION=\$(cat /etc/os-release | grep VERSION_ID | sed -n -e '/VERSION_ID/ s/.*\= *//p' | tr -d '"')
 yum update -y
 yum install deltarpm -y
-rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
 
 case \$OS_VERSION in
 
   7)
     echo "Installing components for RHEL version 7."
-    yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm -y
+    cp /etc/yum.repos.d/backup/* /etc/yum.repos.d/
+    mv /etc/yum.repos.d/kioskos.repo /etc/yum.repos.d/backup/
+    #yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+    #curl -o /etc/yum.repos.d/jdoss-wireguard-epel-7.repo https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
+    #yum install wireguard-dkms wireguard-tools -y
+    rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    yum install https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm -y
+    yum install epel-release -y
+    yum install yum-plugin-elrepo -y
+    yum update kernel -y
     yum install kmod-wireguard wireguard-tools -y
     ;;
 
@@ -55,6 +63,7 @@ case \$OS_VERSION in
     echo "Installing components for RHEL version 8."
     yum install https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm -y
     dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+    yum install kmod-wireguard wireguard-tools -y
     ;;
 
   *)
@@ -62,8 +71,8 @@ case \$OS_VERSION in
     exit 0
     ;;
 esac
-yum install kmod-wireguard wireguard-tools -y
-
+yum install nmcli -y
+nmcli con mod eth0 connection.autoconnect yes
 mkdir -v /etc/wireguard/
 sh -c 'umask 077; touch /etc/wireguard/wg0.conf'
 ls -l /etc/wireguard/wg0.conf
@@ -99,8 +108,26 @@ mkdir -p /home/wire/.ssh/
 echo $(cat /home/wire/.ssh/id_ed25519.pub) >> /home/wire/.ssh/authorized_keys
 chown -R wire:wire /home/wire/
 chmod 0600 /home/wire/.ssh/authorized_keys
-echo "Execute the following command at the the Wireguard Server"
-echo "sudo /usr/sbin/register_wireguard \$(cat /etc/wireguard/publickey) $CLIENT_IP/32"
+echo "Execute the following command at the the Wireguard Server" > ~/connection_string.txt
+echo "sudo /usr/sbin/register_wireguard \$(cat /etc/wireguard/publickey) $CLIENT_IP/32" >> ~/connection_string.txt
+echo "Please see /root/connection_string.txt for further steps."
+
+case \$OS_VERSION in
+
+  7)
+    echo "Installing components for RHEL version 7."
+    rm -rf /etc/yum.repos.d/CentOS* 
+    rm -rf /etc/yum.repos.d/elrepo.repo
+    rm -rf /etc/yum.repos.d/epel.repo
+    rm -rf /etc/yum.repos.d/epel-testing.repo
+    mv /etc/yum.repos.d/backup/kioskos.repo /etc/yum.repos.d/
+    ;;
+  *)
+    echo "We support only version 7 or 8."
+    exit 0
+    ;;
+esac
+
 FOK
 #yum install shc -y
 shc -r -f ./client.sh
