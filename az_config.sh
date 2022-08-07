@@ -12,4 +12,5 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.re
 
 sudo dnf install azure-cli -y
 # Azure Vault
-az login --msi
+az login --identity --allow-no-subscriptions
+
