@@ -12,5 +12,6 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.re
 
 sudo dnf install azure-cli -y
 # Azure Vault
-az login --identity --allow-no-subscriptions
+az login --identity -u /subscriptions/8cbd35f6-390d-420b-8799-db326c08ee80/resourcegroups/UAENorthTestServer/providers/Microsoft.ManagedIdentity/userAssignedIdentities/vm-identity
 
+az keyvault secret download --vault-name ethiopia-vault --name vpnserver-pub --file test.pub
